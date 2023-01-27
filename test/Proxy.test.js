@@ -26,6 +26,11 @@ describe("Proxy", async () => {
 
   it("points to an implementation contract", async () => {
     expect(await proxy.callStatic.getImplementation()).to.eq(logic.address);
+    // view functions do not spend gas
+    // if a function was not declared as view or it modifies the storage, 
+    // then we can execute it in read-only mode which does not change storages but stil returns the return value, and so no gas cost
+    // note: that can be used to determine if a transaction will fail or succeed
+
   });
 
   it("proxies calls to implementation contract", async () => {
@@ -63,6 +68,10 @@ describe("Proxy", async () => {
     ];
 
     const proxied = new ethers.Contract(proxy.address, abi, owner);
+
+    await expect(proxied.initialize()).to.be.revertedWith(
+      "already initialized"
+    );
 
     await proxied.setMagicNumber(0x33);
     expect(await proxied.getMagicNumber()).to.eq("0x33");
